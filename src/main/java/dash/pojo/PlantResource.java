@@ -33,7 +33,7 @@ import dash.service.PostService;
 import dash.service.UserService;
 
 @Component
-@Path("/comments")
+@Path("/plants")
 public class PlantResource {
 	@Autowired
 	private PlantService plantService;
@@ -42,34 +42,31 @@ public class PlantResource {
 	private PostService postService;
 	
 	@Autowired
-	private PlantService commentService;
-	
-	@Autowired
 	private GroupService groupService;
 	
 	@POST
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.TEXT_HTML })
-	public Response createPlants(Plant comment) throws AppException {
-		Post post= postService.getPostById(comment.getId());
+	public Response createPlants(Plant plant) throws AppException {
+		Post post= postService.getPostById(plant.getId());
 		Group group = groupService.getGroupById(post.getGroup_id());
 		
-		Long createPlantId = commentService.createPlant(comment, group);
+		Long createPlantId = plantService.createPlant(plant, group);
 		return Response.status(Response.Status.CREATED)
 				// 201
-				.entity("A new comment has been created")
+				.entity("A new plant has been created")
 				.header("Location",
-						"http://localhost:8080/comments/"
+						"http://localhost:8080/plants/"
 								+ String.valueOf(createPlantId)).build();
 	}
 	
 	@POST
 	@Path("list")
 	@Consumes({ MediaType.APPLICATION_JSON })
-	public Response createPlants(List<Plant> comments) throws AppException {
-		commentService.createPlants(comments);
+	public Response createPlants(List<Plant> plants) throws AppException {
+		plantService.createPlants(plants);
 		return Response.status(Response.Status.CREATED) // 201
-				.entity("List of comments was successfully created").build();
+				.entity("List of plants was successfully created").build();
 	}
 	
 	
@@ -99,8 +96,8 @@ public class PlantResource {
 	{
 		if(post_id!=null){
 			Post post = postService.getPostById(post_id);
-			List<Plant> comments = commentService.getPlantsByPost(numberOfPlants, startIndex, post);
-			return comments;
+			List<Plant> plants = plantService.getPlantsByPost(numberOfPlants, startIndex, post);
+			return plants;
 		} else {
 			return new ArrayList<Plant>();
 		}
@@ -145,10 +142,10 @@ public class PlantResource {
 	public Response getPlantById(@PathParam("id") String id,
 			@QueryParam("detailed") boolean detailed)
 					throws IOException,	AppException {
-		Plant commentById = commentService.getPlantByCommonName(id);
+		Plant plantById = plantService.getPlantByCommonName(id);
 		return Response
 				.status(200)
-				.entity(new GenericEntity<Plant>(commentById) {
+				.entity(new GenericEntity<Plant>(plantById) {
 				},
 				detailed ? new Annotation[] { PostDetailedView.Factory
 						.get() } : new Annotation[0])
@@ -164,24 +161,24 @@ public class PlantResource {
 	@Path("{id}")
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.TEXT_HTML })
-	public Response putPlantById(@PathParam("id") String id, Plant comment)
+	public Response putPlantById(@PathParam("id") String id, Plant plant)
 			throws AppException {
-		Plant commentById = commentService.getPlantByCommonName(id);
+		Plant plantById = plantService.getPlantByCommonName(id);
 		
-		if (commentById == null) {
+		if (plantById == null) {
 			return Response
 					.status(Response.Status.NOT_FOUND)
 					// 404
 					.entity("Plant does not exist with specified id: " + id).build();
 		} else {
 			// resource is existent and a full update should occur
-			commentService.updateFullyPlant(commentById);
+			plantService.updateFullyPlant(plantById);
 			return Response
 					.status(Response.Status.OK)
 					// 200
-					.entity("The comment you specified has been fully updated AT THE LOCATION you specified")
+					.entity("The plant you specified has been fully updated AT THE LOCATION you specified")
 					.header("Location",
-							"http://localhost:8888/services/comments/"
+							"http://localhost:8888/services/plants/"
 									+ String.valueOf(id)).build();
 		}
 	}
@@ -191,12 +188,12 @@ public class PlantResource {
 	@Path("{id}")
 	@Consumes({ MediaType.APPLICATION_JSON })
 	@Produces({ MediaType.TEXT_HTML })
-	public Response partialUpdatePost(@PathParam("id") Long id, Plant comment)
+	public Response partialUpdatePost(@PathParam("id") Long id, Plant plant)
 			throws AppException
 	{
-		comment.setId(id);
+		plant.setId(id);
 		Post post = new Post();
-		if(comment.getId() == null) {
+		if(plant.getId() == null) {
 			return Response
 					.status(Response.Status.BAD_REQUEST)
 					.entity("Must have set post_id")
@@ -204,13 +201,13 @@ public class PlantResource {
 							"http://localhost:8080/services/posts/"
 									+ String.valueOf(post)).build();
 		} else {
-			post.setId(comment.getId());
+			post.setId(plant.getId());
 		}
-		commentService.updateFullyPlant(comment);
+		plantService.updateFullyPlant(plant);
 		return Response
 				.status(Response.Status.OK)
 				// 200
-				.entity("The comment you specified has been successfully updated")
+				.entity("The plant you specified has been successfully updated")
 				.build();
 	}
 
@@ -222,8 +219,8 @@ public class PlantResource {
 	@Produces({ MediaType.TEXT_HTML })
 	public Response deletePlant(@PathParam("id") String id)
 			throws AppException {
-		Plant comment = commentService.getPlantByCommonName(id);
-		commentService.deletePlant(comment);
+		Plant plant = plantService.getPlantByCommonName(id);
+		plantService.deletePlant(plant);
 		return Response.status(Response.Status.NO_CONTENT)// 204
 				.entity("Post successfully removed from database").build();
 	}
